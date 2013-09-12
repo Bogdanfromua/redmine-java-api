@@ -35,6 +35,7 @@ import com.taskadapter.redmineapi.RedmineFormatException;
 import com.taskadapter.redmineapi.RedmineInternalError;
 import com.taskadapter.redmineapi.RedmineManager;
 import com.taskadapter.redmineapi.RedmineOptions;
+import com.taskadapter.redmineapi.bean.Attachment;
 import com.taskadapter.redmineapi.bean.Group;
 import com.taskadapter.redmineapi.bean.Identifiable;
 import com.taskadapter.redmineapi.bean.Issue;
@@ -148,6 +149,11 @@ public final class Transport {
                 Watcher.class,
                 config("watcher", "watchers", null,
                         RedmineJSONParser.WATCHER_PARSER));
+
+        OBJECT_CONFIGS.put(
+                Attachment.class,
+                config("attachment", "attachments", null,
+                        RedmineJSONParser.ATTACHMENT_PARSER));
 	}
 
 	private final URIConfigurator configurator;
@@ -330,27 +336,42 @@ public final class Transport {
 		return errorCheckingCommunicator.sendRequest(request, handler);
 	}
 
+    /**
+     * UPloads content on a server.
+     *
+     * @param content
+     *            content stream.
+     * @param contentSize
+     *            content size.
+     * @return uploaded item token.
+     * @throws RedmineException
+     *             if something goes wrong.
+     */
+    public String upload(InputStream content, long contentSize) throws RedmineException {
+        final URI uploadURI = getURIConfigurator().getUploadURI();
+        final HttpPost request = new HttpPost(uploadURI);
+        final AbstractHttpEntity entity = new InputStreamEntity(content, contentSize);
+		/* Content type required by a Redmine */
+        entity.setContentType("application/octet-stream");
+        request.setEntity(entity);
+
+        final String result = getCommunicator().sendRequest(request);
+        return parseResponse(result, "upload",
+                RedmineJSONParser.UPLOAD_TOKEN_PARSER);
+    }
+
 	/**
 	 * UPloads content on a server.
-	 * 
+	 *
 	 * @param content
 	 *            content stream.
 	 * @return uploaded item token.
 	 * @throws RedmineException
 	 *             if something goes wrong.
 	 */
-	public String upload(InputStream content) throws RedmineException {
-		final URI uploadURI = getURIConfigurator().getUploadURI();
-		final HttpPost request = new HttpPost(uploadURI);
-		final AbstractHttpEntity entity = new InputStreamEntity(content, -1);
-		/* Content type required by a Redmine */
-		entity.setContentType("application/octet-stream");
-		request.setEntity(entity);
-
-		final String result = getCommunicator().sendRequest(request);
-		return parseResponse(result, "upload",
-            RedmineJSONParser.UPLOAD_TOKEN_PARSER);
-	}
+    public String upload(InputStream content) throws RedmineException {
+        return upload(content, -1);
+    }
 
 	/**
 	 * @param classs
