@@ -453,6 +453,16 @@ public class RedmineManager {
 		return transport.getObjectsList(TimeEntry.class);
     }
 
+    public List<TimeEntry> getTimeEntries(Map<String, String> pParameters) throws RedmineException {
+        Set<NameValuePair> params = new HashSet<NameValuePair>();
+
+        for (final Entry<String, String> param : pParameters.entrySet()) {
+            params.add(new BasicNameValuePair(param.getKey(), param.getValue()));
+        }
+
+        return transport.getObjectsList(TimeEntry.class, params);
+    }
+
     /**
      * @param id the database Id of the TimeEntry record
      */
